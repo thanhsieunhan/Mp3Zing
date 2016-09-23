@@ -28,6 +28,7 @@ class TableViewOnline: UIViewController, UITableViewDelegate, UITableViewDataSou
         
     }
     
+    
     func getData()
     {
         let data = NSData(contentsOfURL: NSURL(string: "http://mp3.zing.vn/bang-xep-hang/bai-hat-Viet-Nam/IWZ9Z08I.html")!)
