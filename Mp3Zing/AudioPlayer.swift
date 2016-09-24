@@ -29,6 +29,7 @@ class AudioPlayer: NSObject {
     var currentTime = Float()
     var titleSong = ""
     var player = AVPlayer()
+    var artistName = ""
     
     var lyric = [Lyric]()
     

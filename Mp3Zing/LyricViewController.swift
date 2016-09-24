@@ -17,12 +17,9 @@ extension UILabel {
                 dispatch_async(dispatch_get_main_queue()) {
                     attributedString.addAttribute(NSForegroundColorAttributeName, value: UIColor.redColor() , range:  NSRange(location: 0, length: i) )
                     typedText.attributedText = attributedString
-                    
-                    
+                    // mai thêm cái này : In đậm
                 }
                 NSThread.sleepForTimeInterval(characterInterval)
-                
-                
                 
                 attributedString.addAttribute(NSForegroundColorAttributeName, value: UIColor.blackColor() , range:  NSRange(location: 0, length: typedText.text!.characters.count))
                 typedText.attributedText = attributedString
@@ -54,40 +51,45 @@ class LyricViewController: UIViewController, UITableViewDelegate, UITableViewDat
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         getData()
-        localTableView.reloadData()
+//        localTableView.reloadData()
     }
     
     var i = 0
     func autoScroll(){
-        let currentTime =  Double(audioPlayer.currentTime)
-        let lyricTime = stringToDouble(audioPlayer.lyric[i].time)
-        
-        if currentTime >= lyricTime {
-            // lấy thời gian giữa 2 lyric
-            let durationTime = stringToDouble(audioPlayer.lyric[i+1].time) - stringToDouble(audioPlayer.lyric[i].time)
+        if audioPlayer.lyric.count != 0 {
             
-            // number Of Section
-            let nos = lyricTabeView.numberOfSections
-            let currentPath : NSIndexPath = NSIndexPath(forItem: i, inSection: nos - 1)
-            let cell = lyricTabeView.cellForRowAtIndexPath(currentPath)
-            let lengthText = audioPlayer.lyric[i].content == "" ? 3 : Double(audioPlayer.lyric[i].content.characters.count)
-            var length = 0.0
-            if lengthText < 5 {
-                length = lengthText * 1.1
-            } else if lengthText < 10 && lengthText > 5{
-                length = lengthText * 3
-            } else if lengthText < 15 && lengthText > 10{
-                length = lengthText * 4
-            } else {
-                length = lengthText * 5
+            let currentTime =  Double(audioPlayer.currentTime)
+
+            let lyricTime = stringToDouble(audioPlayer.lyric[i].time)
+            
+            if currentTime >= lyricTime {
+                // lấy thời gian giữa 2 lyric
+                let durationTime = stringToDouble(audioPlayer.lyric[i+1].time) - stringToDouble(audioPlayer.lyric[i].time)
+                
+                // number Of Section
+                let nos = lyricTabeView.numberOfSections
+                let currentPath : NSIndexPath = NSIndexPath(forItem: i, inSection: nos - 1)
+                let cell = lyricTabeView.cellForRowAtIndexPath(currentPath)
+                let lengthText = audioPlayer.lyric[i].content == "" ? 3 : Double(audioPlayer.lyric[i].content.characters.count)
+                var length = 0.0
+                if lengthText < 5 {
+                    length = lengthText * 1.1
+                } else if lengthText < 10 && lengthText > 5{
+                    length = lengthText * 3
+                } else if lengthText < 15 && lengthText > 10{
+                    length = lengthText * 4
+                } else {
+                    length = lengthText * 5
+                }
+                
+                let characterInterval = durationTime / length
+                cell?.textLabel?.setTextWithWordTypeAnimation((cell?.textLabel)!, characterInterval: characterInterval)
+                
+                i = i + 1
+//                                lyricTabeView.scrollToRowAtIndexPath(currentPath , atScrollPosition: .Middle, animated: true)
+                lyricTabeView.selectRowAtIndexPath(currentPath, animated: false, scrollPosition: .Middle)
+                
             }
-            
-            let characterInterval = durationTime / length
-            cell?.textLabel?.setTextWithWordTypeAnimation((cell?.textLabel)!, characterInterval: characterInterval)
-            i = i + 1
-            
-            lyricTabeView.scrollToRowAtIndexPath(currentPath , atScrollPosition: .Middle, animated: true)
-            lyricTabeView.selectRowAtIndexPath(currentPath, animated: false, scrollPosition: .Middle)
         }
     }
     
@@ -110,14 +112,14 @@ class LyricViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 masterTV.dataSource = self
                 masterTV.delegate = self
                 
-                
+                masterTV.backgroundColor = UIColor.clearColor()
                 masterTV.showsHorizontalScrollIndicator = false
                 masterTV.separatorColor = UIColor.clearColor()
                 scrollView.addSubview(masterTV)
                 scrollView.decelerationRate = 1
                 
             }
-
+            
         }
         for i in scrollView.subviews {
             if i.tag == 101 {
@@ -151,53 +153,90 @@ class LyricViewController: UIViewController, UITableViewDelegate, UITableViewDat
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = UITableViewCell()
+        var cell = UITableViewCell()
         if tableView.tag == 101 {
             var content = ""
             if audioPlayer.lyric[indexPath.row].content == "" {
-                content = "..."
+                content = ""
             } else {
                 content = audioPlayer.lyric[indexPath.row].content
             }
             cell.textLabel?.text = content
             cell.textLabel?.textAlignment = NSTextAlignment.Center
             cell.textLabel?.font = UIFont.systemFontOfSize(20)
+            cell.textLabel?.textColor = UIColor.grayColor()
+            setSelector(cell)
             
+            return cell
             
         } else if tableView.tag == 100 {
+            let nib = UINib(nibName: "CustomCell", bundle: nil)
+            tableView.registerNib(nib, forCellReuseIdentifier: "Cell")
             
-            cell.imageView?.image = listSongs[(indexPath as NSIndexPath).row].thumbnail
-            cell.textLabel?.text = listSongs[(indexPath as NSIndexPath).row].title
+            let cellLocal : CustomCell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as! CustomCell
+            cellLocal.constrainLabel.constant = 8
+            cellLocal.imageSong.hidden = true
+
+            cellLocal.imageSong.image = listSongs[(indexPath as NSIndexPath).row].thumbnail
+            cellLocal.nameSong.text = listSongs[indexPath.row].title
+            cellLocal.artistSong.text = listSongs[indexPath.row].artistName
             
-        } else
-        {
-            cell.textLabel?.text = "Thanh"
+
+            setSelector(cellLocal)
+            
+            return cellLocal
+            
+        } else {
             cell.textLabel?.highlighted = false
         }
         
-        let bgColorView = UIView()
-        bgColorView.backgroundColor = UIColor.clearColor()
-        cell.selectedBackgroundView = bgColorView
+        
         
         return cell
     }
     
+    func setSelector(cell: UITableViewCell){
+        let bgColorView = UIView()
+        bgColorView.backgroundColor = UIColor.clearColor()
+        cell.selectedBackgroundView = bgColorView
+        cell.backgroundColor = UIColor.redColor()
+        cell.backgroundView?.alpha = 0.1
+
+    }
+    
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         if tableView.tag == 100 {
+
             let audioPlay = AudioPlayer.sharedInstance
             let titleSong = listSongs[indexPath.row].title
             audioPlay.pathString = listSongs[indexPath.row].sourceLocal
-            audioPlay.titleSong = "\(titleSong) Ca si: \(listSongs[(indexPath as NSIndexPath).row].artistName)"
             
+            audioPlay.titleSong = titleSong
+            audioPlay.artistName = listSongs[indexPath.row].artistName
             audioPlay.lyric = getLyric(titleSong)
-            audioPlay.setupAudio()
             
+            audioPlay.setupAudio()
+            cellSelected(indexPath)
             lyricTabeView.reloadData()
-            _ = NSTimer.scheduledTimerWithTimeInterval(0.05, target: self, selector: #selector(LyricViewController.autoScroll), userInfo: nil, repeats: true)
+            if audioPlay.lyric.count == 0  {
+                print(123)
+            } else {
+                NSTimer.scheduledTimerWithTimeInterval(0.05, target: self, selector: #selector(LyricViewController.autoScroll), userInfo: nil, repeats: true)
+            }
+            
             NSNotificationCenter.defaultCenter().postNotificationName("setupObserveAudio", object: nil)
+            i = 0
         }
         
-        i = 0
+        
+    }
+    
+    func cellSelected(indexPath : NSIndexPath){
+        
+        let cell = tableView(localTableView, cellForRowAtIndexPath: indexPath) as! CustomCell
+        cell.constrainLabel.constant = 76
+        cell.imageSong.hidden = false
+
     }
     
     
@@ -250,29 +289,39 @@ class LyricViewController: UIViewController, UITableViewDelegate, UITableViewDat
             
             var myStrings = data.componentsSeparatedByCharactersInSet(NSCharacterSet.newlineCharacterSet())
             // xoá các giá trị "" thừa
-            for i in myStrings {
-                if i == "" {
-                    myStrings.removeAtIndex(myStrings.indexOf(i)!)
-                }
-            }
-            
-            for i in myStrings{
-                if i.hasPrefix("[length:") {
-                    print(i)
-                }
-                if myStrings[5].hasPrefix("[id:") {
-                    if myStrings.indexOf(i) > 5 {
-                        lyricList.append(appendLyric(i))
+            if myStrings.count != 1 {
+                for i in myStrings {
+                    if i == "" {
+                        myStrings.removeAtIndex(myStrings.indexOf(i)!)
                     }
-                } else {
-                    if myStrings.indexOf(i) > 4 {
-                        lyricList.append(appendLyric(i))
-                    }
-                    
                 }
+                var timeEnd = ""
+                for i in myStrings{
+                    if i.hasPrefix("[length:") {
+                        
+                        let myNSString = i as NSString
+                        
+                        // cắt chuỗi từ vị trí 9 độ dài 5 xong r cắt chuỗi qua dấu ":"
+                        timeEnd = myNSString.substringWithRange(NSRange(location: 9, length: 5))+".100"
+                        
+                        
+                    }
+                    if myStrings[5].hasPrefix("[id:") {
+                        if myStrings.indexOf(i) > 5 {
+                            lyricList.append(appendLyric(i))
+                        }
+                    } else {
+                        if myStrings.indexOf(i) > 4 {
+                            lyricList.append(appendLyric(i))
+                        }
+                        
+                    }
+                }
+                lyricList.append(Lyric(time: timeEnd, content: ""))
             }
-            
         }
+        
+        
         return lyricList
     }
     
@@ -298,5 +347,7 @@ class LyricViewController: UIViewController, UITableViewDelegate, UITableViewDat
         
         return Lyric(time: time, content: content)
     }
+    
+    
     
 }
